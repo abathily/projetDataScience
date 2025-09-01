@@ -1,10 +1,8 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import pickle
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
@@ -18,7 +16,7 @@ st.set_page_config(page_title="ML Project", layout="wide")
 
 st.title(" Machine Learning - Classification & Régression")
 
-# Initialiser session_state pour le modèle
+# ----------------- SESSION STATE -----------------
 if "model" not in st.session_state:
     st.session_state.model = None
 if "task" not in st.session_state:
@@ -37,28 +35,24 @@ dataset_choice = st.sidebar.selectbox(
 if dataset_choice == "Iris (Classification)":
     data = load_iris(as_frame=True)
     df = data.frame
-    target = data.target
     target_name = "target"
     task = "classification"
 
 elif dataset_choice == "Wine (Classification)":
     data = load_wine(as_frame=True)
     df = data.frame
-    target = data.target
     target_name = "target"
     task = "classification"
 
 elif dataset_choice == "Diabetes (Régression)":
     data = load_diabetes(as_frame=True)
     df = data.frame
-    target = data.target
     target_name = "target"
     task = "regression"
 
 elif dataset_choice == "California Housing (Régression)":
     data = fetch_california_housing(as_frame=True)
     df = data.frame
-    target = data.target
     target_name = "target"
     task = "regression"
 
@@ -70,10 +64,13 @@ else:
         st.write(df.head())
         target_name = st.sidebar.selectbox("Choisir la colonne cible", df.columns)
         task = st.sidebar.radio("Type de tâche", ["classification", "regression"])
-        target = df[target_name]
     else:
         st.warning("Veuillez uploader un fichier CSV.")
         st.stop()
+
+# Définir X et y
+y = df[target_name]
+X = df.drop(columns=[target_name])
 
 # ----------------- EXPLORATION -----------------
 st.subheader(" Exploration des données")
@@ -87,21 +84,17 @@ st.write(df.describe())
 # ----------------- VISUALISATION -----------------
 st.subheader(" Visualisation")
 
-if st.checkbox("Afficher la distribution des variables"):
-    fig, ax = plt.subplots(figsize=(10, 5))
-    df.hist(ax=ax)
-    st.pyplot(fig)
+if st.checkbox("Afficher la distribution des variables numériques"):
+    fig = df.hist(figsize=(12, 8))
+    st.pyplot(plt.gcf())
 
 if st.checkbox("Afficher la heatmap des corrélations"):
     fig, ax = plt.subplots(figsize=(8, 6))
-    sns.heatmap(df.corr(), annot=True, cmap="coolwarm", ax=ax)
+    sns.heatmap(df.corr(numeric_only=True), annot=True, cmap="coolwarm", ax=ax)
     st.pyplot(fig)
 
 # ----------------- MODELISATION -----------------
 st.subheader(" Modélisation")
-
-X = df.drop(columns=[target_name])
-y = target
 
 # Encodage si nécessaire
 for col in X.select_dtypes(include=["object"]).columns:
@@ -144,7 +137,6 @@ if st.button(" Entraîner le modèle"):
         fig, ax = plt.subplots()
         sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
         st.pyplot(fig)
-
     else:
         st.success(f"MSE : {mean_squared_error(y_test, y_pred):.2f}")
         st.success(f"R2 Score : {r2_score(y_test, y_pred):.2f}")
@@ -154,11 +146,16 @@ st.subheader(" Tester une prédiction")
 
 if st.checkbox("Faire une prédiction sur de nouvelles données"):
     if st.session_state.model is None:
-        st.error(" Veuillez d'abord entraîner le modèle avant de prédire.")
+        st.error("⚠ Veuillez d'abord entraîner le modèle avant de prédire.")
     else:
         input_data = []
         for col in st.session_state.X_columns:
-            val = st.number_input(f"Entrer {col}", float(X[col].min()), float(X[col].max()), float(X[col].mean()))
+            val = st.number_input(
+                f"Entrer {col}",
+                float(X[col].min()),
+                float(X[col].max()),
+                float(X[col].mean())
+            )
             input_data.append(val)
 
         if st.button("Prédire"):
