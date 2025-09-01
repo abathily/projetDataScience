@@ -13,7 +13,6 @@ from sklearn.datasets import load_iris, load_wine, load_diabetes, fetch_californ
 
 # ----------------- PAGE CONFIG -----------------
 st.set_page_config(page_title="ML Project", layout="wide")
-
 st.title(" Machine Learning - Classification & Régression")
 
 # ----------------- SESSION STATE -----------------
