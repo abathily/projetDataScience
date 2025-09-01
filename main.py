@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-#import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -25,12 +24,12 @@ if "X_columns" not in st.session_state:
 
 # ----------------- CHOIX DATASET -----------------
 st.sidebar.header("1. Choisir un dataset")
-
 dataset_choice = st.sidebar.selectbox(
     "Sélectionner un dataset",
     ("Iris (Classification)", "Wine (Classification)", "Diabetes (Régression)", "California Housing (Régression)", "Charger un CSV")
 )
 
+# Charger le dataset choisi
 if dataset_choice == "Iris (Classification)":
     data = load_iris(as_frame=True)
     df = data.frame
@@ -67,38 +66,44 @@ else:
         st.warning("Veuillez uploader un fichier CSV.")
         st.stop()
 
-# Définir X et y
+# ----------------- Définir X et y -----------------
 y = df[target_name]
 X = df.drop(columns=[target_name])
+
+# ----------------- TRAITEMENT DES DONNÉES -----------------
+# Encodage des colonnes catégorielles
+for col in X.select_dtypes(include=["object"]).columns:
+    le = LabelEncoder()
+    X[col] = le.fit_transform(X[col].astype(str))
+
+# Remplacer les valeurs manquantes par la moyenne (ou zéro pour classification)
+X = X.fillna(X.mean())
+if task == "regression":
+    y = y.fillna(y.mean())
+else:
+    y = y.fillna(0)
 
 # ----------------- EXPLORATION -----------------
 st.subheader(" Exploration des données")
 st.write("Dimensions :", df.shape)
 st.write("Valeurs manquantes :", df.isnull().sum().sum())
 st.write("Aperçu :", df.head())
-
 st.write("Statistiques descriptives :")
 st.write(df.describe())
 
 # ----------------- VISUALISATION -----------------
 st.subheader(" Visualisation")
-
 if st.checkbox("Afficher la distribution des variables numériques"):
     fig = df.hist(figsize=(12, 8))
     st.pyplot(plt.gcf())
 
 if st.checkbox("Afficher la heatmap des corrélations"):
-    fig, ax = plt.subplots(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(10, 6))
     sns.heatmap(df.corr(numeric_only=True), annot=True, cmap="coolwarm", ax=ax)
     st.pyplot(fig)
 
 # ----------------- MODELISATION -----------------
 st.subheader(" Modélisation")
-
-# Encodage si nécessaire
-for col in X.select_dtypes(include=["object"]).columns:
-    le = LabelEncoder()
-    X[col] = le.fit_transform(X[col])
 
 # Split
 test_size = st.slider("Taille du test set (%)", 10, 50, 20)
@@ -107,42 +112,38 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size/10
 # Choix modèle
 if task == "classification":
     model_choice = st.radio("Choisir un modèle", ("Logistic Regression", "Random Forest"))
-    if model_choice == "Logistic Regression":
-        model = LogisticRegression(max_iter=1000)
-    else:
-        model = RandomForestClassifier()
+    model = LogisticRegression(max_iter=1000) if model_choice == "Logistic Regression" else RandomForestClassifier()
 else:
     model_choice = st.radio("Choisir un modèle", ("Linear Regression", "Random Forest"))
-    if model_choice == "Linear Regression":
-        model = LinearRegression()
-    else:
-        model = RandomForestRegressor()
+    model = LinearRegression() if model_choice == "Linear Regression" else RandomForestRegressor()
 
 # Entraînement
 if st.button(" Entraîner le modèle"):
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
+    try:
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
 
-    # Sauvegarde dans session_state
-    st.session_state.model = model
-    st.session_state.task = task
-    st.session_state.X_columns = X.columns
+        # Sauvegarde dans session_state
+        st.session_state.model = model
+        st.session_state.task = task
+        st.session_state.X_columns = X.columns
 
-    if task == "classification":
-        st.success(f"Accuracy : {accuracy_score(y_test, y_pred):.2f}")
-        st.text("Classification Report :")
-        st.text(classification_report(y_test, y_pred))
-        cm = confusion_matrix(y_test, y_pred)
-        fig, ax = plt.subplots()
-        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
-        st.pyplot(fig)
-    else:
-        st.success(f"MSE : {mean_squared_error(y_test, y_pred):.2f}")
-        st.success(f"R2 Score : {r2_score(y_test, y_pred):.2f}")
+        if task == "classification":
+            st.success(f"Accuracy : {accuracy_score(y_test, y_pred):.2f}")
+            st.text("Classification Report :")
+            st.text(classification_report(y_test, y_pred))
+            cm = confusion_matrix(y_test, y_pred)
+            fig, ax = plt.subplots()
+            sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", ax=ax)
+            st.pyplot(fig)
+        else:
+            st.success(f"MSE : {mean_squared_error(y_test, y_pred):.2f}")
+            st.success(f"R2 Score : {r2_score(y_test, y_pred):.2f}")
+    except Exception as e:
+        st.error(f"Erreur lors de l'entraînement du modèle : {e}")
 
 # ----------------- DEPLOIEMENT SIMPLE -----------------
 st.subheader(" Tester une prédiction")
-
 if st.checkbox("Faire une prédiction sur de nouvelles données"):
     if st.session_state.model is None:
         st.error("⚠ Veuillez d'abord entraîner le modèle avant de prédire.")
@@ -158,5 +159,8 @@ if st.checkbox("Faire une prédiction sur de nouvelles données"):
             input_data.append(val)
 
         if st.button("Prédire"):
-            pred = st.session_state.model.predict([input_data])[0]
-            st.success(f"Résultat de la prédiction : {pred}")
+            try:
+                pred = st.session_state.model.predict([input_data])[0]
+                st.success(f"Résultat de la prédiction : {pred}")
+            except Exception as e:
+                st.error(f"Erreur lors de la prédiction : {e}")
