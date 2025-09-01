@@ -1,0 +1,26 @@
+L’objectif de cette phase de labo est de permettre aux étudiants de pratiquer et de valider leurs compétences acquises sur n’importe quel sujet de régression ou de classification sur lequel ils souhaitent travailler. Les étudiants sont libres de proposer leurs idées de projets qui relèvent des tâches d’apprentissage automatique supervisées. Nous apprécions beaucoup...
+
+Objectif du projet
+Tout au long de ce projet, les étudiants seront amenés à mettre en pratique leurs connaissances pour construire, entraîner et déployer des modèles de machines supervisés afin de résoudre des problèmes du monde réel.
+
+Pas à pas
+Sur ce projet, vous passerez par ces étapes. Toutes les étapes doivent être franchies pour mener à bien ce projet.
+
+1
+Collecte et exploration de données
+Dans cette première étape, les étudiants doivent collecter les données qui accompagnent l’idée de projet sélectionnée et effectuer les tâches de prétraitement des données nécessaires (nettoyage des données, détection des valeurs aberrantes, ingénierie des fonctionnalités, etc.).
+
+
+2
+Visualisation des données et sélection du modèle
+Dans un deuxième temps, les étudiants appliqueront leurs compétences en visualisation de données pour mieux comprendre les données et proposer un modèle de régression en conséquence.
+
+
+3
+Formation et test de modèles.
+À ce niveau, les étudiants doivent s’entraîner et rechercher les paramètres optimaux pour obtenir les résultats souhaités.
+
+
+4
+Déploiement et surveillance du modèle
+La dernière phase consiste à choisir la bonne stratégie de déploiement pour votre modèle de machine learning et à construire votre solution de supervision.
